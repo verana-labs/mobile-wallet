@@ -2,17 +2,14 @@ import {ReactNode} from 'react';
 import {BaseActionObject, Interpreter, ResolveTypegenMeta, ServiceMap, State, StateMachine, TypegenDisabled} from 'xstate';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {IIdentifier} from '@veramo/core';
-import {
-  ClientMetadataOpts,
-  RPRegistrationMetadataPayload,
-  VerifiedAuthorizationRequest,
-} from '@sphereon/did-auth-siop';
+import {ClientMetadataOpts, RPRegistrationMetadataPayload, VerifiedAuthorizationRequest} from '@sphereon/did-auth-siop';
 import {DidAuthConfig, Party} from '@sphereon/ssi-sdk.data-store-types';
 import {ErrorDetails} from '../../error';
 import {UniqueDigitalCredential} from '@sphereon/ssi-sdk.credential-store';
 import {TrustedAnchor} from '@sphereon/ssi-sdk-ext.identifier-resolution';
 import {AuthorizationServerMetadata, CredentialIssuerMetadata} from '@sphereon/oid4vci-common';
-import { DcqlQuery } from 'dcql'
+import {DcqlQuery} from 'dcql';
+import {VeranaTrustResolution} from '../../../services/veranaTrustService';
 
 export type SiopV2AuthorizationRequestData = {
   correlationId: string;
@@ -25,8 +22,10 @@ export type SiopV2AuthorizationRequestData = {
   entityId?: string;
   // x5c chain (base64 DER, leaf-first) from the request-object JWS header, when present.
   x5c?: Array<string>;
+  // Present only when the verifier's DID positively resolved TRUSTED on the Verana registry.
+  veranaTrust?: VeranaTrustResolution;
   // presentationDefinitions?: PresentationDefinitionWithLocation[];
-  dcqlQuery: DcqlQuery
+  dcqlQuery: DcqlQuery;
 };
 
 export type SiopV2MachineContext = {

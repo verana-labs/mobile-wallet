@@ -1,0 +1,32 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index 8e0cde08aaeb307e2046b42b0d4c242ba5b9638f..1561fa048a9a62504b886999b57b171221161e5a 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -408,6 +408,11 @@ var oid4vciHasAuthorizationResponse = /* @__PURE__ */ __name((ctx, _event) => {
+   return !!ctx.openID4VCIClientState?.authorizationCodeResponse;
+ }, "oid4vciHasAuthorizationResponse");
+ var oid4vciIsFirstPartyApplication = /* @__PURE__ */ __name((ctx, _event) => {
++  const offer = ctx.openID4VCIClientState?.credentialOffer;
++  const hasPreAuthGrant = !!(offer?.preAuthorizedCode ?? offer?.credential_offer?.grants?.["urn:ietf:params:oauth:grant-type:pre-authorized_code"]);
++  if (hasPreAuthGrant) {
++    return false;
++  }
+   return !!ctx.serverMetadata?.authorization_challenge_endpoint;
+ }, "oid4vciIsFirstPartyApplication");
+ var createOID4VCIMachine = /* @__PURE__ */ __name((opts) => {
+diff --git a/dist/index.js b/dist/index.js
+index bb45de0e53b1bd54213218ee64589474c41d835d..cfa4fadea56223a7e631a9980805e673428d6300 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -326,6 +326,11 @@ var oid4vciHasAuthorizationResponse = /* @__PURE__ */ __name((ctx, _event) => {
+   return !!ctx.openID4VCIClientState?.authorizationCodeResponse;
+ }, "oid4vciHasAuthorizationResponse");
+ var oid4vciIsFirstPartyApplication = /* @__PURE__ */ __name((ctx, _event) => {
++  const offer = ctx.openID4VCIClientState?.credentialOffer;
++  const hasPreAuthGrant = !!(offer?.preAuthorizedCode ?? offer?.credential_offer?.grants?.["urn:ietf:params:oauth:grant-type:pre-authorized_code"]);
++  if (hasPreAuthGrant) {
++    return false;
++  }
+   return !!ctx.serverMetadata?.authorization_challenge_endpoint;
+ }, "oid4vciIsFirstPartyApplication");
+ var createOID4VCIMachine = /* @__PURE__ */ __name((opts) => {

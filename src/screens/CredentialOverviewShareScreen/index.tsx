@@ -9,6 +9,7 @@ import {UniqueDigitalCredential} from '@sphereon/ssi-sdk.credential-store';
 import CredentialSelectView from '../../components/views/CredentialSelectView';
 import ScreenContainer from '../../components/containers/ScreenContainer';
 import RelyingPartyView from '../../components/views/RelyingPartyView';
+import VeranaTrustView from '../../components/views/VeranaTrustView';
 import {translate} from '../../localization/Localization';
 import {warnIfRevokedOrExpired} from '../../utils/presentationWarning';
 import {filterVisibleCredentials} from '../../utils/credentialVisibility';
@@ -100,7 +101,7 @@ const matchCredentialsWithDcqlQuery = (credentials: UniqueDigitalCredential[], d
 
 const SelectOverviewShareScreen: FC<Props> = (props: Props): ReactElement => {
   // memoize filtered and other values
-  const {credentials, verifier, dcqlQuery, onSelectAndSend, onDecline} = props.route.params;
+  const {credentials, verifier, dcqlQuery, veranaTrust, onSelectAndSend, onDecline} = props.route.params;
   const showRevoked = useUserPreference('showRevokedCredentials') ?? false;
   const showExpired = useUserPreference('showExpiredCredentials') ?? false;
   // Hide revoked/expired credentials from the picker unless the user enabled them in settings.
@@ -206,6 +207,7 @@ const SelectOverviewShareScreen: FC<Props> = (props: Props): ReactElement => {
     <ScreenContainer footer={footer} style={{paddingHorizontal: 0}}>
       <View style={{paddingHorizontal: 20, paddingTop: 20}}>
         <RelyingPartyView party={verifier} onPress={onPressRP} />
+        {veranaTrust && <VeranaTrustView partyName={verifier.contact.displayName} resolution={veranaTrust} style={{marginTop: 12}} />}
       </View>
       {/*<View style={{paddingHorizontal: 16}}>*/}
       {/*// FIXME SSISDK-42 purpose */}

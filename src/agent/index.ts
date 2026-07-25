@@ -15,6 +15,7 @@ import {getResolver as webDIDResolver} from 'web-did-resolver';
 import {DID_PREFIX} from '../@config/constants';
 import {DEFAULT_DB_CONNECTION} from '../services/databaseService';
 import {IRequiredContext, SupportedDidMethodEnum, TAgentTypes} from '../types';
+import {getDidWebvhResolver} from './didWebvhResolver';
 import {refreshFromStorage as refreshTrustAnchors} from './trustAnchorRegistry';
 import {createAgentPlugins, sphereonKeyManager} from './plugins';
 import DefaultCallbacks = com.sphereon.crypto.DefaultCallbacks;
@@ -27,16 +28,20 @@ export const didResolver = new Resolver({
   ...webDIDResolver(),
   ...getDidJwkResolver(),
   ...getDidOydResolver(),
+  ...getDidWebvhResolver(),
 });
 
 export const didMethodsSupported = Object.keys(didResolver['registry']).map(method => method.toLowerCase().replace('did:', ''));
 
-export const didProviders = ({keyManager, defaultKms = keyManager.defaultKms}: {defaultKms?: string, keyManager: SphereonKeyManager})  => {
+export const didProviders = ({keyManager, defaultKms = keyManager.defaultKms}: {defaultKms?: string; keyManager: SphereonKeyManager}) => {
   return {
     [`${DID_PREFIX}:${SupportedDidMethodEnum.DID_KEY}`]: new SphereonKeyDidProvider({}),
     [`${DID_PREFIX}:${SupportedDidMethodEnum.DID_JWK}`]: new JwkDIDProvider({}),
-    [`${DID_PREFIX}:${SupportedDidMethodEnum.DID_OYD}`]: new OydDIDProvider({defaultKms, clientManagedSecretMode: new DefaultOydCmsmCallbacks(keyManager)}),
-  }
+    [`${DID_PREFIX}:${SupportedDidMethodEnum.DID_OYD}`]: new OydDIDProvider({
+      defaultKms,
+      clientManagedSecretMode: new DefaultOydCmsmCallbacks(keyManager),
+    }),
+  };
 };
 
 const dbConnection: OrPromise<DataSource> = DEFAULT_DB_CONNECTION;

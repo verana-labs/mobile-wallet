@@ -24,7 +24,7 @@ import {
   PartyOrigin,
   PartyTypeType,
 } from '@sphereon/ssi-sdk.data-store-types';
-import {CredentialRole} from '@sphereon/ssi-types'
+import {CredentialRole} from '@sphereon/ssi-types';
 import {SimpleEventsOf} from 'xstate';
 import {authenticate} from '../../services/authenticationService';
 import {UniqueDigitalCredential} from '@sphereon/ssi-sdk.credential-store';
@@ -140,6 +140,7 @@ const navigateAddContact = async (args: SiopV2MachineNavigationArgs): Promise<vo
       roles: [CredentialRole.VERIFIER],
       uri: contact.uri,
       federations: federationParties,
+      veranaTrust: authorizationRequestData.veranaTrust,
       identities: contact.identities,
       onAliasChange,
       onCreate,
@@ -152,7 +153,7 @@ const navigateAddContact = async (args: SiopV2MachineNavigationArgs): Promise<vo
 
 const navigateReviewContact = async (args: SiopV2MachineNavigationArgs): Promise<void> => {
   const {navigation, state, siopV2Machine, onBack, onNext} = args;
-  const {contact, trustedAnchors} = state.context;
+  const {contact, trustedAnchors, authorizationRequestData} = state.context;
 
   if (!contact) {
     return Promise.reject(Error('Missing contact in context'));
@@ -171,6 +172,7 @@ const navigateReviewContact = async (args: SiopV2MachineNavigationArgs): Promise
       roles: contact.roles,
       uri: contact.uri,
       federations: federationParties,
+      veranaTrust: authorizationRequestData?.veranaTrust,
       onContinue: onNext,
       onDecline,
       onBack,
@@ -194,7 +196,6 @@ const navigateSelectCredentials = async (args: SiopV2MachineNavigationArgs): Pro
   if (authorizationRequestData.dcqlQuery === undefined) {
     return Promise.reject(Error('No credential query present'));
   }
-
 
   const onSelect = async (selectedCredentials: Array<UniqueDigitalCredential>): Promise<void> => {
     siopV2Machine.send({
@@ -236,6 +237,7 @@ const navigateSelectCredentials = async (args: SiopV2MachineNavigationArgs): Pro
       //presentationDefinition: presentationDefinitionWithLocation.definition,
       dcqlQuery: authorizationRequestData.dcqlQuery,
       credentials: creds,
+      veranaTrust: authorizationRequestData.veranaTrust,
       onDecline,
       onSelectAndSend,
     },

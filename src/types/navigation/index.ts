@@ -13,6 +13,7 @@ import {OnboardingMachineInterpreter} from '../machines/onboarding';
 import {SiopV2MachineInterpreter} from '../machines/siopV2';
 import {DcqlQuery} from 'dcql';
 import {ITrustAnchor} from '../store/trustAnchor.types';
+import {VeranaTrustResolution} from '../../services/veranaTrustService';
 
 export type ParamsList = Record<string, object | undefined>;
 export type Navigate<T extends ParamsList> = NavigationHelpers<T, any>['navigate'];
@@ -72,6 +73,7 @@ export type StackParamList = {
   TrustAnchorsOverview: Record<string, never>;
   TrustAnchorAdd: Record<string, never>;
   TrustAnchorDetails: ITrustAnchorDetailsProps;
+  VeranaTrustDetails: IVeranaTrustDetailsProps;
   [MainRoutesEnum.DC_API_CONSENT]: IDCApiConsentProps;
 };
 
@@ -231,6 +233,7 @@ export interface ICredentialOverviewShareProps {
   //presentationDefinition: IPresentationDefinition;
   dcqlQuery: DcqlQuery;
   credentials: UniqueDigitalCredential[];
+  veranaTrust?: VeranaTrustResolution;
   onDecline: () => Promise<void>;
   onSelectAndSend: (credentials: UniqueDigitalCredential[]) => Promise<void>;
 }
@@ -339,6 +342,7 @@ export interface INewContactAddProps {
   contacts?: Array<string>;
   logo?: ImageAttributes;
   federations?: Array<Party>;
+  veranaTrust?: VeranaTrustResolution;
   roles?: Array<CredentialRole>;
   identities?: Array<NonPersistedIdentity>;
   onCreate?: (contact: Party) => Promise<void>;
@@ -427,6 +431,7 @@ export enum ScreenRoutesEnum {
   TRUST_ANCHORS_OVERVIEW = 'TrustAnchorsOverview',
   TRUST_ANCHOR_ADD = 'TrustAnchorAdd',
   TRUST_ANCHOR_DETAILS = 'TrustAnchorDetails',
+  VERANA_TRUST_DETAILS = 'VeranaTrustDetails',
 }
 
 export interface ISiopV2PProps {
@@ -435,4 +440,9 @@ export interface ISiopV2PProps {
 
 export interface ITrustAnchorDetailsProps {
   trustAnchor: ITrustAnchor;
+}
+
+export interface IVeranaTrustDetailsProps {
+  resolution: VeranaTrustResolution;
+  partyName?: string;
 }

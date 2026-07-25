@@ -63,6 +63,7 @@ import SettingsScreen from '../screens/Settings/SettingsScreen';
 import TrustAnchorAddScreen from '../screens/TrustAnchorAddScreen';
 import TrustAnchorsOverviewScreen from '../screens/TrustAnchorsOverviewScreen';
 import TrustAnchorDetailScreen from '../screens/TrustAnchorDetailScreen';
+import VeranaTrustDetailsScreen from '../screens/VeranaTrustDetailsScreen';
 import SSIContactAddScreen from '../screens/SSIContactAddScreen';
 import SSIContactDetailsScreen from '../screens/SSIContactDetailsScreen';
 import SSIContactsOverviewScreen from '../screens/SSIContactsOverviewScreen';
@@ -156,10 +157,7 @@ const MainStackNavigator = (): JSX.Element => {
               headerShown: false,
             }}
           />
-          <Stack.Screen
-            name={MainRoutesEnum.OID4VCI}
-            component={OID4VCIStackWithContext}
-          />
+          <Stack.Screen name={MainRoutesEnum.OID4VCI} component={OID4VCIStackWithContext} />
           <Stack.Screen
             name={MainRoutesEnum.SIOPV2}
             children={() => (
@@ -301,7 +299,7 @@ const TabStackNavigator = (): JSX.Element => {
           children={() => (
             <>
               <CredentialCatalogStack />
-              </>
+            </>
           )}
         />
       )}
@@ -869,7 +867,11 @@ export const OnboardingStack = (): JSX.Element => (
     <OnboardingBaseStack.Screen name="Welcome" component={WelcomeScreen} options={{headerShown: false}} />
     <OnboardingBaseStack.Screen name="ShowProgress" component={ShowProgressScreen} options={{header: OnboardingDefaultHeader as any}} />
     <OnboardingBaseStack.Screen name="ReadTermsAndPrivacy" component={ReadTermsAndPrivacyScreen} options={{header: OnboardingDefaultHeader as any}} />
-    <OnboardingBaseStack.Screen name="IncorrectPersonalData" component={IncorrectInformationScreen} options={{header: OnboardingDefaultHeader as any}} />
+    <OnboardingBaseStack.Screen
+      name="IncorrectPersonalData"
+      component={IncorrectInformationScreen}
+      options={{header: OnboardingDefaultHeader as any}}
+    />
     <OnboardingBaseStack.Screen name="CompleteOnboarding" component={CompleteOnboardingScreen} options={{headerShown: false}} />
     {stackGroupsConfig.map(group => (
       <OnboardingBaseStack.Group key={group.titleKey}>
@@ -1576,6 +1578,16 @@ export const SiopV2Stack = (): JSX.Element => {
         })}
       />
       <Stack.Screen
+        name={ScreenRoutesEnum.VERANA_TRUST_DETAILS}
+        component={VeranaTrustDetailsScreen}
+        options={{
+          headerTitle: translate('verana_details_screen_title'),
+          header: (props: NativeStackHeaderProps) => (
+            <SSIHeaderBar {...props} showProfileIcon={false} headerSubTitle={translate('verana_details_screen_subtitle')} />
+          ),
+        }}
+      />
+      <Stack.Screen
         name={ScreenRoutesEnum.CREDENTIAL_RAW_JSON}
         component={SSICredentialRawJsonScreen}
         options={{
@@ -1710,7 +1722,11 @@ const AppNavigator = ({navigationIsReady}: {navigationIsReady: boolean}): JSX.El
         headerShown: false,
       }}>
       {lockState === WalletAuthLockState.LOADING ? (
-        <Stack.Screen name={ScreenRoutesEnum.LOADING} component={SSILoadingScreen} initialParams={{message: translate('action_getting_information_message')}}/>
+        <Stack.Screen
+          name={ScreenRoutesEnum.LOADING}
+          component={SSILoadingScreen}
+          initialParams={{message: translate('action_getting_information_message')}}
+        />
       ) : lockState === WalletAuthLockState.ONBOARDING ? (
         <>
           <Stack.Screen
