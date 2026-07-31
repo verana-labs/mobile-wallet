@@ -6,6 +6,7 @@ import {ActivityIndicator, Linking, ScrollView, TouchableOpacity, View} from 're
 import {VERANA_REGISTRY_NAME, VERANA_RESOLVER_URL} from '../../@config/constants';
 import ShieldIcon from '../../components/assets/icons/ShieldIcon';
 import {translate} from '../../localization/Localization';
+import {readEcsOrganization, readEcsService} from '../../services/veranaEcs';
 import {fetchVeranaTrustDetails, VeranaTrustCredential, VeranaTrustDetails} from '../../services/veranaTrustService';
 import {SSIBasicContainerStyled as Container} from '../../styles/components';
 import {ScreenRoutesEnum, StackParamList} from '../../types';
@@ -71,6 +72,10 @@ const LinkField: FC<{label: string; url?: string}> = ({label, url}) =>
 const CredentialCard: FC<{credential: VeranaTrustCredential}> = ({credential}) => {
   const claims = credential.claims ?? {};
   const isService = credential.ecsType === 'ECS-SERVICE';
+  // The testnet still serves v3 claim names while the published schemas are v4, so read
+  // both shapes through the normalizer rather than off the raw claims.
+  const service = isService ? readEcsService(credential) : undefined;
+  const organization = isService ? undefined : readEcsOrganization(credential);
   return (
     <View style={{backgroundColor: backgroundColors.secondaryDark, borderRadius: 8, padding: 16, gap: 10}}>
       <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
@@ -84,17 +89,20 @@ const CredentialCard: FC<{credential: VeranaTrustCredential}> = ({credential}) =
       </View>
       {isService ? (
         <>
-          <Field label={translate('verana_details_field_type')} value={asString(claims.type)} />
-          <Field label={translate('verana_details_field_description')} value={asString(claims.description)} />
-          <LinkField label={translate('verana_details_field_privacy_policy')} url={asHttpUrl(claims.privacyPolicy)} />
-          <LinkField label={translate('verana_details_field_terms_and_conditions')} url={asHttpUrl(claims.termsAndConditions)} />
+          <Field label={translate('verana_details_field_type')} value={service?.type} />
+          <Field label={translate('verana_details_field_description')} value={service?.description} />
+          <LinkField label={translate('verana_details_field_privacy_policy')} url={asHttpUrl(service?.privacy?.uri)} />
+          <LinkField
+            label={translate('verana_details_field_terms_and_conditions')}
+            url={asHttpUrl(service?.terms?.uri)}
+          />
         </>
       ) : (
         <>
-          <Field label={translate('verana_details_field_legal_name')} value={asString(claims.name)} />
-          <Field label={translate('verana_details_field_address')} value={asString(claims.address)} />
-          <Field label={translate('verana_details_field_registry_id')} value={asString(claims.registryId)} />
-          <Field label={translate('verana_details_field_country')} value={asString(claims.countryCode)} />
+          <Field label={translate('verana_details_field_legal_name')} value={organization?.name} />
+          <Field label={translate('verana_details_field_address')} value={organization?.address} />
+          <Field label={translate('verana_details_field_registry_id')} value={organization?.registryId} />
+          <Field label={translate('verana_details_field_country')} value={organization?.countryCode} />
         </>
       )}
     </View>
