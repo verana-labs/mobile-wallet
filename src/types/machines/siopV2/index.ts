@@ -9,6 +9,7 @@ import {UniqueDigitalCredential} from '@sphereon/ssi-sdk.credential-store';
 import {TrustedAnchor} from '@sphereon/ssi-sdk-ext.identifier-resolution';
 import {AuthorizationServerMetadata, CredentialIssuerMetadata} from '@sphereon/oid4vci-common';
 import {DcqlQuery} from 'dcql';
+import {VeranaAccreditationCheck} from '../../../services/veranaPermissions';
 import {VeranaTrustResolution} from '../../../services/veranaTrustService';
 
 export type SiopV2AuthorizationRequestData = {
@@ -22,8 +23,10 @@ export type SiopV2AuthorizationRequestData = {
   entityId?: string;
   // x5c chain (base64 DER, leaf-first) from the request-object JWS header, when present.
   x5c?: Array<string>;
-  // Present only when the verifier's DID positively resolved TRUSTED on the Verana registry.
+  // Present whenever the verifier identified by DID; carries every outcome incl. UNVERIFIED.
   veranaTrust?: VeranaTrustResolution;
+  // Q3 verdict, computed only on a TRUSTED resolution for the first requested vct.
+  veranaAccreditation?: VeranaAccreditationCheck;
   // presentationDefinitions?: PresentationDefinitionWithLocation[];
   dcqlQuery: DcqlQuery;
 };

@@ -41,6 +41,7 @@ import {recordTrustAnchorLinksForVerification} from '../../store/actions/trustAn
 import {SiopV2AuthorizationRequestData, SiopV2MachineContext} from '../../types/machines/siopV2';
 import {getCredentialIssuerContact, getCredentialSubjectContact, translateCorrelationIdToName} from '../../utils';
 import {getContacts} from '../contactService';
+import {checkVeranaAccreditation} from '../veranaPermissions';
 import {extractDidFromClientId, resolveVeranaTrust} from '../veranaTrustService';
 
 const CLOCK_SKEW = 120;
@@ -132,6 +133,16 @@ export const getSiopRequest = async (context: Pick<SiopV2MachineContext, 'didAut
   const x5c: Array<string> | undefined = await extractRequestObjectX5c(verifiedAuthorizationRequest);
   const veranaDid = extractDidFromClientId(clientId);
   const veranaTrust = veranaDid ? await resolveVeranaTrust(veranaDid) : undefined;
+  const requestedVct = verifiedAuthorizationRequest.dcqlQuery?.credentials
+    ?.map(credentialQuery =>
+      credentialQuery.meta && 'vct_values' in credentialQuery.meta ? credentialQuery.meta.vct_values?.[0] : undefined,
+    )
+    .find((vct): vct is string => typeof vct === 'string');
+  // Q3 renders on a TRUSTED state; UNTRUSTED already blocks, UNVERIFIED stays could-not-determine.
+  const veranaAccreditation =
+    veranaDid && veranaTrust?.trustStatus === 'TRUSTED' && requestedVct
+      ? await checkVeranaAccreditation({did: veranaDid, role: 'verifier', vct: requestedVct})
+      : undefined;
 
   return {
     issuer: verifiedAuthorizationRequest.issuer,
@@ -144,6 +155,7 @@ export const getSiopRequest = async (context: Pick<SiopV2MachineContext, 'didAut
     entityId,
     x5c,
     veranaTrust,
+    veranaAccreditation,
     dcqlQuery: verifiedAuthorizationRequest.dcqlQuery,
     // presentationDefinitions:
     //   (await verifiedAuthorizationRequest.authorizationRequest.containsResponseType('vp_token')) ||

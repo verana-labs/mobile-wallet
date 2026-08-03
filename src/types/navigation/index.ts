@@ -13,6 +13,7 @@ import {OnboardingMachineInterpreter} from '../machines/onboarding';
 import {SiopV2MachineInterpreter} from '../machines/siopV2';
 import {DcqlQuery} from 'dcql';
 import {ITrustAnchor} from '../store/trustAnchor.types';
+import {VeranaAccreditationCheck} from '../../services/veranaPermissions';
 import {VeranaTrustResolution} from '../../services/veranaTrustService';
 
 export type ParamsList = Record<string, object | undefined>;
@@ -234,6 +235,8 @@ export interface ICredentialOverviewShareProps {
   dcqlQuery: DcqlQuery;
   credentials: UniqueDigitalCredential[];
   veranaTrust?: VeranaTrustResolution;
+  veranaAccreditation?: VeranaAccreditationCheck;
+  isSendDisabled?: boolean | (() => boolean);
   onDecline: () => Promise<void>;
   onSelectAndSend: (credentials: UniqueDigitalCredential[]) => Promise<void>;
 }
@@ -251,6 +254,8 @@ export interface ICredentialDetailsProps {
   rawCredential?: OriginalVerifiableCredential;
   uniqueDigitalCredential?: UniqueDigitalCredential;
   headerTitle?: string;
+  veranaTrust?: VeranaTrustResolution;
+  veranaAccreditation?: VeranaAccreditationCheck;
 }
 
 export interface ICredentialRawJsonProps {

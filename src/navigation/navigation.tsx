@@ -1389,6 +1389,16 @@ export const OID4VCIStack = (): JSX.Element => {
         }}
       />
       <Stack.Screen
+        name={ScreenRoutesEnum.VERANA_TRUST_DETAILS}
+        component={VeranaTrustDetailsScreen}
+        options={{
+          headerTitle: translate('verana_details_screen_title'),
+          header: (props: NativeStackHeaderProps) => (
+            <SSIHeaderBar {...props} showProfileIcon={false} headerSubTitle={translate('verana_details_screen_subtitle')} />
+          ),
+        }}
+      />
+      <Stack.Screen
         name={ScreenRoutesEnum.CREDENTIAL_DETAILS}
         component={CredentialDetailsScreen}
         options={({route}) => ({

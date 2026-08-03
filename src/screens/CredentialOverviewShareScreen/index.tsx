@@ -101,7 +101,7 @@ const matchCredentialsWithDcqlQuery = (credentials: UniqueDigitalCredential[], d
 
 const SelectOverviewShareScreen: FC<Props> = (props: Props): ReactElement => {
   // memoize filtered and other values
-  const {credentials, verifier, dcqlQuery, veranaTrust, onSelectAndSend, onDecline} = props.route.params;
+  const {credentials, verifier, dcqlQuery, veranaTrust, veranaAccreditation, isSendDisabled, onSelectAndSend, onDecline} = props.route.params;
   const showRevoked = useUserPreference('showRevokedCredentials') ?? false;
   const showExpired = useUserPreference('showExpiredCredentials') ?? false;
   // Hide revoked/expired credentials from the picker unless the user enabled them in settings.
@@ -151,13 +151,20 @@ const SelectOverviewShareScreen: FC<Props> = (props: Props): ReactElement => {
     // return; // FIXME Funke, we need to go to an error / warn screen for this
   }
 
+  // Share is blocked on an UNTRUSTED resolution, on a definitive Q3 refusal, and while the
+  // check is still in flight. A could-not-determine verdict (granted undefined) never blocks here.
+  const veranaBlocks =
+    veranaTrust?.trustStatus === 'UNTRUSTED' ||
+    veranaAccreditation?.granted === false ||
+    (typeof isSendDisabled === 'function' ? isSendDisabled() : isSendDisabled === true);
+
   const footer = (
     <View style={{gap: 10, flexDirection: 'column'}}>
       <PrimaryButton
         style={{height: 42}}
         caption={translate('action_share_label')}
         captionColor={fontColors.light}
-        disabled={Object.values(selectedCredentials).filter(cred => !!cred).length !== dcqlQuery.credentials.length} //presentationDefinition
+        disabled={veranaBlocks || Object.values(selectedCredentials).filter(cred => !!cred).length !== dcqlQuery.credentials.length} //presentationDefinition
         onPress={async () => {
           const selected = Object.values(selectedCredentials).filter((s): s is UniqueDigitalCredential => s != null);
           if (!selected.length) {

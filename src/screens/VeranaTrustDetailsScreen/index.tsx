@@ -76,14 +76,15 @@ const CredentialCard: FC<{credential: VeranaTrustCredential}> = ({credential}) =
   // both shapes through the normalizer rather than off the raw claims.
   const service = isService ? readEcsService(credential) : undefined;
   const organization = isService ? undefined : readEcsOrganization(credential);
+  const isVerified = credential.result === 'VALID';
   return (
     <View style={{backgroundColor: backgroundColors.secondaryDark, borderRadius: 8, padding: 16, gap: 10}}>
       <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
-        <ShieldIcon isProtected={true} color={'#B1EBC9'} />
+        <ShieldIcon isProtected={isVerified} color={isVerified ? '#B1EBC9' : fontColors.light} />
         <View style={{flex: 1}}>
           <SSITextH4LightStyled>{asString(claims.name) ?? ecsTypeLabel(credential.ecsType)}</SSITextH4LightStyled>
           <SSITextH5LightStyled style={{opacity: 0.6}}>
-            {ecsTypeLabel(credential.ecsType)} · {credential.result ?? 'VALID'}
+            {[ecsTypeLabel(credential.ecsType), credential.result].filter(Boolean).join(' · ')}
           </SSITextH5LightStyled>
         </View>
       </View>
@@ -140,7 +141,12 @@ const VeranaTrustDetailsScreen: FC<Props> = (props: Props): ReactElement => {
     <Container>
       <ScrollView style={{flex: 1}} contentContainerStyle={{paddingBottom: 32}}>
         <View style={{paddingHorizontal: 24, paddingTop: 20, flexDirection: 'row', alignItems: 'center', gap: 12}}>
-          <ShieldIcon isProtected={true} color={'#B1EBC9'} width={24} height={27} />
+          <ShieldIcon
+            isProtected={resolution.trustStatus === 'TRUSTED'}
+            color={resolution.trustStatus === 'TRUSTED' ? '#B1EBC9' : fontColors.light}
+            width={24}
+            height={27}
+          />
           <View style={{flex: 1}}>
             <SSITextH3LightStyled accessibilityRole="header">{partyName ?? VERANA_REGISTRY_NAME}</SSITextH3LightStyled>
             <SSITextH5LightStyled style={{opacity: 0.7, marginTop: 2}}>

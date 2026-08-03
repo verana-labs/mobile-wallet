@@ -150,7 +150,7 @@ const NewContactAddScreen: FC<Props> = (props: Props): ReactElement => {
       }
     };
 
-    if (federations !== undefined && federations.length === 0 && warnOnLowTrust && !veranaTrust) {
+    if (federations !== undefined && federations.length === 0 && warnOnLowTrust && veranaTrust?.trustStatus !== 'TRUSTED') {
       props.navigation.navigate(MainRoutesEnum.POPUP_MODAL, {
         title: translate('new_contact_add_new_contact_low_level_trust_title'),
         details: translate('new_contact_add_new_contact_low_level_trust_description'),
@@ -285,7 +285,7 @@ const NewContactAddScreen: FC<Props> = (props: Props): ReactElement => {
       {veranaTrust && (
         <VeranaTrustView partyName={name} resolution={veranaTrust} style={{marginTop: 12, marginBottom: 24, marginRight: 24, marginLeft: 24}} />
       )}
-      {brandedFederations && (brandedFederations.length > 0 || !veranaTrust) && (
+      {brandedFederations && (brandedFederations.length > 0 || veranaTrust?.trustStatus !== 'TRUSTED') && (
         <FederationTrustView
           partyName={name}
           federations={brandedFederations}
