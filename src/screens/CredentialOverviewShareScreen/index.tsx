@@ -9,7 +9,7 @@ import {UniqueDigitalCredential} from '@sphereon/ssi-sdk.credential-store';
 import CredentialSelectView from '../../components/views/CredentialSelectView';
 import ScreenContainer from '../../components/containers/ScreenContainer';
 import RelyingPartyView from '../../components/views/RelyingPartyView';
-import VeranaTrustView from '../../components/views/VeranaTrustView';
+import {VeranaTrustChain} from '../../components/views/VeranaTrustChain';
 import {translate} from '../../localization/Localization';
 import {warnIfRevokedOrExpired} from '../../utils/presentationWarning';
 import {filterVisibleCredentials} from '../../utils/credentialVisibility';
@@ -151,6 +151,19 @@ const SelectOverviewShareScreen: FC<Props> = (props: Props): ReactElement => {
     // return; // FIXME Funke, we need to go to an error / warn screen for this
   }
 
+  const requestedVct = dcqlQuery.credentials
+    ?.map(credentialQuery => (credentialQuery.meta && 'vct_values' in credentialQuery.meta ? credentialQuery.meta.vct_values?.[0] : undefined))
+    .find((vct): vct is string => typeof vct === 'string');
+  const requestedCredentialName = (() => {
+    if (!requestedVct) return undefined;
+    try {
+      const segments = new URL(requestedVct).pathname.split('/').filter(Boolean);
+      return segments[segments.length - 1] ?? requestedVct;
+    } catch {
+      return requestedVct;
+    }
+  })();
+
   // Share is blocked on an UNTRUSTED resolution, on a definitive Q3 refusal, and while the
   // check is still in flight. A could-not-determine verdict (granted undefined) never blocks here.
   const veranaBlocks =
@@ -214,7 +227,18 @@ const SelectOverviewShareScreen: FC<Props> = (props: Props): ReactElement => {
     <ScreenContainer footer={footer} style={{paddingHorizontal: 0}}>
       <View style={{paddingHorizontal: 20, paddingTop: 20}}>
         <RelyingPartyView party={verifier} onPress={onPressRP} />
-        {veranaTrust && <VeranaTrustView partyName={verifier.contact.displayName} resolution={veranaTrust} style={{marginTop: 12}} />}
+        {veranaTrust && (
+          <View style={{marginTop: 12}}>
+            <VeranaTrustChain
+              resolution={veranaTrust}
+              credentials={veranaTrust.credentials}
+              isLoading={false}
+              accreditation={veranaAccreditation}
+              ask={requestedCredentialName ? {kind: 'request', credential: requestedCredentialName, party: verifier.contact.displayName} : undefined}
+              partyName={verifier.contact.displayName}
+            />
+          </View>
+        )}
       </View>
       {/*<View style={{paddingHorizontal: 16}}>*/}
       {/*// FIXME SSISDK-42 purpose */}

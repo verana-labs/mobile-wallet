@@ -42,7 +42,7 @@ import {SiopV2AuthorizationRequestData, SiopV2MachineContext} from '../../types/
 import {getCredentialIssuerContact, getCredentialSubjectContact, translateCorrelationIdToName} from '../../utils';
 import {getContacts} from '../contactService';
 import {checkVeranaAccreditation} from '../veranaPermissions';
-import {extractDidFromClientId, resolveVeranaTrust} from '../veranaTrustService';
+import {extractDidFromClientId, fetchVeranaTrustDetails} from '../veranaTrustService';
 
 const CLOCK_SKEW = 120;
 const logger = Loggers.DEFAULT.get('sphereon:siopV2MachineService');
@@ -132,7 +132,8 @@ export const getSiopRequest = async (context: Pick<SiopV2MachineContext, 'didAut
   const entityId: string | undefined = verifiedAuthorizationRequest.authorizationRequest.getMergedProperty<string>('entity_id');
   const x5c: Array<string> | undefined = await extractRequestObjectX5c(verifiedAuthorizationRequest);
   const veranaDid = extractDidFromClientId(clientId);
-  const veranaTrust = veranaDid ? await resolveVeranaTrust(veranaDid) : undefined;
+  // Full detail (ECS credentials included): the consent card renders SERVICE / OPERATED BY blocks.
+  const veranaTrust = veranaDid ? await fetchVeranaTrustDetails(veranaDid) : undefined;
   const requestedVct = verifiedAuthorizationRequest.dcqlQuery?.credentials
     ?.map(credentialQuery =>
       credentialQuery.meta && 'vct_values' in credentialQuery.meta ? credentialQuery.meta.vct_values?.[0] : undefined,

@@ -10,7 +10,7 @@ import {TrustedAnchor} from '@sphereon/ssi-sdk-ext.identifier-resolution';
 import {AuthorizationServerMetadata, CredentialIssuerMetadata} from '@sphereon/oid4vci-common';
 import {DcqlQuery} from 'dcql';
 import {VeranaAccreditationCheck} from '../../../services/veranaPermissions';
-import {VeranaTrustResolution} from '../../../services/veranaTrustService';
+import {VeranaTrustDetails} from '../../../services/veranaTrustService';
 
 export type SiopV2AuthorizationRequestData = {
   correlationId: string;
@@ -24,7 +24,7 @@ export type SiopV2AuthorizationRequestData = {
   // x5c chain (base64 DER, leaf-first) from the request-object JWS header, when present.
   x5c?: Array<string>;
   // Present whenever the verifier identified by DID; carries every outcome incl. UNVERIFIED.
-  veranaTrust?: VeranaTrustResolution;
+  veranaTrust?: VeranaTrustDetails;
   // Q3 verdict, computed only on a TRUSTED resolution for the first requested vct.
   veranaAccreditation?: VeranaAccreditationCheck;
   // presentationDefinitions?: PresentationDefinitionWithLocation[];

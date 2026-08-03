@@ -14,7 +14,7 @@ import {SiopV2MachineInterpreter} from '../machines/siopV2';
 import {DcqlQuery} from 'dcql';
 import {ITrustAnchor} from '../store/trustAnchor.types';
 import {VeranaAccreditationCheck} from '../../services/veranaPermissions';
-import {VeranaTrustResolution} from '../../services/veranaTrustService';
+import {VeranaTrustDetails, VeranaTrustResolution} from '../../services/veranaTrustService';
 
 export type ParamsList = Record<string, object | undefined>;
 export type Navigate<T extends ParamsList> = NavigationHelpers<T, any>['navigate'];
@@ -234,7 +234,7 @@ export interface ICredentialOverviewShareProps {
   //presentationDefinition: IPresentationDefinition;
   dcqlQuery: DcqlQuery;
   credentials: UniqueDigitalCredential[];
-  veranaTrust?: VeranaTrustResolution;
+  veranaTrust?: VeranaTrustDetails;
   veranaAccreditation?: VeranaAccreditationCheck;
   isSendDisabled?: boolean | (() => boolean);
   onDecline: () => Promise<void>;
@@ -254,7 +254,7 @@ export interface ICredentialDetailsProps {
   rawCredential?: OriginalVerifiableCredential;
   uniqueDigitalCredential?: UniqueDigitalCredential;
   headerTitle?: string;
-  veranaTrust?: VeranaTrustResolution;
+  veranaTrust?: VeranaTrustDetails;
   veranaAccreditation?: VeranaAccreditationCheck;
 }
 

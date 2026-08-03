@@ -58,7 +58,7 @@ import {extractIssuerX5cFromCredential} from '../../services/trustAnchor/trustAn
 import {extractIssuerX5cFromMdoc} from '../../services/trustAnchor/mdocX5c';
 import {checkVeranaAccreditation} from '../../services/veranaPermissions';
 import {resolveSignedIssuerMetadata} from '../../services/veranaSignedIssuerMetadata';
-import {resolveVeranaTrust} from '../../services/veranaTrustService';
+import {fetchVeranaTrustDetails} from '../../services/veranaTrustService';
 import {computeEntryHash} from '@veramo/utils';
 import {VerifiableCredential} from '@veramo/core';
 import {UniqueDigitalCredential} from '@sphereon/ssi-sdk.credential-store';
@@ -422,7 +422,7 @@ const navigateReviewCredentials = async (args: OID4VCIMachineNavigationArgs): Pr
   // OID4VCI carries no client_id; the issuer's DID is only discoverable through its DID-signed
   // metadata (Accept: application/jwt). No signed metadata → no DID → no Verana card, by design.
   const issuerDid = serverMetadata?.issuer ? (await resolveSignedIssuerMetadata(serverMetadata.issuer))?.did : undefined;
-  const veranaTrust = issuerDid ? await resolveVeranaTrust(issuerDid) : undefined;
+  const veranaTrust = issuerDid ? await fetchVeranaTrustDetails(issuerDid) : undefined;
   const offeredConfiguration = serverMetadata?.credentialIssuerMetadata?.credential_configurations_supported?.[configId];
   const offeredVct =
     offeredConfiguration && 'vct' in offeredConfiguration && typeof offeredConfiguration.vct === 'string' ? offeredConfiguration.vct : types[0];
