@@ -58,7 +58,7 @@ import {extractIssuerX5cFromCredential} from '../../services/trustAnchor/trustAn
 import {extractIssuerX5cFromMdoc} from '../../services/trustAnchor/mdocX5c';
 import {checkVeranaAccreditation} from '../../services/veranaPermissions';
 import {resolveSignedIssuerMetadata} from '../../services/veranaSignedIssuerMetadata';
-import {fetchVeranaTrustDetails} from '../../services/veranaTrustService';
+import {fetchVeranaTrustDetails, resolveVeranaTrust} from '../../services/veranaTrustService';
 import {computeEntryHash} from '@veramo/utils';
 import {VerifiableCredential} from '@veramo/core';
 import {UniqueDigitalCredential} from '@sphereon/ssi-sdk.credential-store';
@@ -156,6 +156,8 @@ const navigateAddContact = async (args: OID4VCIMachineNavigationArgs): Promise<v
   };
 
   const federationParties = await lookupFederationParties(contact, trustedAnchors);
+  const issuerDid = serverMetadata.issuer ? (await resolveSignedIssuerMetadata(serverMetadata.issuer))?.did : undefined;
+  const veranaTrust = issuerDid ? await resolveVeranaTrust(issuerDid) : undefined;
 
   const branding = issuerBranding?.[0] ?? {};
   navigation.navigate(MainRoutesEnum.OID4VCI, {
@@ -163,6 +165,7 @@ const navigateAddContact = async (args: OID4VCIMachineNavigationArgs): Promise<v
     params: {
       name: contact.contact.displayName,
       federations: federationParties,
+      veranaTrust,
       uri: contact.uri,
       identities: contact.identities,
       contacts: branding.contacts,
@@ -183,7 +186,7 @@ const navigateAddContact = async (args: OID4VCIMachineNavigationArgs): Promise<v
 
 const navigateReviewContact = async (args: OID4VCIMachineNavigationArgs): Promise<void> => {
   const {navigation, state, oid4vciMachine, onBack, onNext} = args;
-  const {contact, issuerBranding, trustedAnchors} = state.context;
+  const {contact, issuerBranding, trustedAnchors, serverMetadata} = state.context;
 
   if (!contact) {
     return Promise.reject(Error('Missing contact in context'));
@@ -194,6 +197,8 @@ const navigateReviewContact = async (args: OID4VCIMachineNavigationArgs): Promis
   };
 
   const federationParties = await lookupFederationParties(contact, trustedAnchors);
+  const issuerDid = serverMetadata?.issuer ? (await resolveSignedIssuerMetadata(serverMetadata.issuer))?.did : undefined;
+  const veranaTrust = issuerDid ? await resolveVeranaTrust(issuerDid) : undefined;
 
   const branding = issuerBranding?.[0] ?? {};
   navigation.navigate(MainRoutesEnum.OID4VCI, {
@@ -201,6 +206,7 @@ const navigateReviewContact = async (args: OID4VCIMachineNavigationArgs): Promis
     params: {
       name: contact.contact.displayName,
       federations: federationParties,
+      veranaTrust,
       uri: contact.uri,
       logo: branding.logo,
       description: branding.description,

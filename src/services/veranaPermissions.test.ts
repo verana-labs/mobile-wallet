@@ -106,6 +106,31 @@ describe('veranaPermissions', () => {
     });
   });
 
+  it('resolves the schema when the VTJSC carries only $ref, the live cast shape', async () => {
+    const vct = 'https://issuer.example/vct/service-credential';
+    const vtjscId = 'https://issuer.example/credentials/schema';
+    mockFetch.mockImplementation((input: unknown) => {
+      const url = String(input);
+      if (url === vct) {
+        return Promise.resolve(jsonResponse({relatedJsonSchemaCredentialId: vtjscId}));
+      }
+      if (url === vtjscId) {
+        return Promise.resolve(
+          jsonResponse({credentialSubject: {jsonSchema: {$ref: 'vpr:verana:vna-testnet-1/cs/v1/js/253'}, id: 'vpr:verana:vna-testnet-1/cs/v1/js/253'}}),
+        );
+      }
+      if (url.includes('/verana/perm/v1/list')) {
+        return Promise.resolve(jsonResponse({permissions: [wirePermission({schema_id: '253'})]}));
+      }
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
+    });
+
+    await expect(checkVeranaAccreditation({did, vct, role: 'issuer'})).resolves.toEqual({
+      granted: true,
+      reason: 'An active issuer permission covers this schema',
+    });
+  });
+
   it('treats a full VPR page as truncated, so a grant beyond the cut cannot read as absent', async () => {
     const page = Array.from({length: 1000}, (_, index) => wirePermission({id: `${index}`, did: 'did:webvh:filler.example'}));
     mockFetch.mockResolvedValue(jsonResponse({permissions: page}));
