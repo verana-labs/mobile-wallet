@@ -131,30 +131,34 @@ export const schemaIdFromVct = (vct?: string): string | undefined => {
   return VPR_SCHEMA_ID.exec(vct)?.[1];
 };
 
+export type VctSchemaResolution = {schemaId?: string; credentialName?: string};
+
 // The SD-JWT type metadata names the schema credential (`relatedJsonSchemaCredentialId`), which
 // names the VPR schema in `credentialSubject.jsonSchema.$id` - the schema the issuer actually
-// committed to, rather than a credential title anyone can reuse.
-export const resolveSchemaIdFromVct = async (vct: string): Promise<string | undefined> => {
+// committed to, rather than a credential title anyone can reuse. The type metadata's `name` is
+// the display name the consent screens render.
+export const resolveVctSchema = async (vct: string): Promise<VctSchemaResolution> => {
   const direct = VPR_SCHEMA_ID.exec(vct)?.[1];
   if (direct) {
-    return direct;
+    return {schemaId: direct};
   }
   if (!/^https:\/\//.test(vct)) {
-    return undefined;
+    return {};
   }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PERMISSION_TIMEOUT_MS);
   try {
     const typeMetadata: unknown = await (await fetch(vct, {signal: controller.signal})).json();
+    const credentialName = isRecord(typeMetadata) ? asString(typeMetadata.name) : undefined;
     const vtjscId = isRecord(typeMetadata) ? asString(typeMetadata.relatedJsonSchemaCredentialId) : undefined;
     if (!vtjscId || !/^https:\/\//.test(vtjscId)) {
-      return undefined;
+      return {credentialName};
     }
 
     const vtjsc: unknown = await (await fetch(vtjscId, {signal: controller.signal})).json();
     if (!isRecord(vtjsc) || !isRecord(vtjsc.credentialSubject)) {
-      return undefined;
+      return {credentialName};
     }
     // Live VTJSCs carry the pointer as `jsonSchema.$ref` (vpr:…/cs/v1/js/N) with a copy in
     // `credentialSubject.id`; `$id` is the published-schema variant. Read all three.
@@ -162,14 +166,16 @@ export const resolveSchemaIdFromVct = async (vct: string): Promise<string | unde
     const id =
       (isRecord(jsonSchema) ? asString(jsonSchema.$id) ?? asString(jsonSchema.$ref) : undefined) ??
       asString(vtjsc.credentialSubject.id);
-    return id ? VPR_SCHEMA_ID.exec(id)?.[1] : undefined;
+    return {schemaId: id ? VPR_SCHEMA_ID.exec(id)?.[1] : undefined, credentialName};
   } catch (error) {
     debug(`schema resolution failed for ${vct}: ${error}`);
-    return undefined;
+    return {};
   } finally {
     clearTimeout(timeout);
   }
 };
+
+export const resolveSchemaIdFromVct = async (vct: string): Promise<string | undefined> => (await resolveVctSchema(vct)).schemaId;
 
 export const fetchSchemas = async (): Promise<Array<VeranaSchema> | undefined> => {
   const controller = new AbortController();

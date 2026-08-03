@@ -236,6 +236,7 @@ export interface ICredentialOverviewShareProps {
   credentials: UniqueDigitalCredential[];
   veranaTrust?: VeranaTrustDetails;
   veranaAccreditation?: VeranaAccreditationCheck;
+  veranaRequestedCredentialName?: string;
   isSendDisabled?: boolean | (() => boolean);
   onDecline: () => Promise<void>;
   onSelectAndSend: (credentials: UniqueDigitalCredential[]) => Promise<void>;

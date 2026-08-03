@@ -27,6 +27,8 @@ export type SiopV2AuthorizationRequestData = {
   veranaTrust?: VeranaTrustDetails;
   // Q3 verdict, computed only on a TRUSTED resolution for the first requested vct.
   veranaAccreditation?: VeranaAccreditationCheck;
+  // Display name from the requested vct's type metadata, e.g. "DemoCredential".
+  veranaRequestedCredentialName?: string;
   // presentationDefinitions?: PresentationDefinitionWithLocation[];
   dcqlQuery: DcqlQuery;
 };

@@ -239,6 +239,7 @@ const navigateSelectCredentials = async (args: SiopV2MachineNavigationArgs): Pro
       credentials: creds,
       veranaTrust: authorizationRequestData.veranaTrust,
       veranaAccreditation: authorizationRequestData.veranaAccreditation,
+      veranaRequestedCredentialName: authorizationRequestData.veranaRequestedCredentialName,
       onDecline,
       onSelectAndSend,
     },

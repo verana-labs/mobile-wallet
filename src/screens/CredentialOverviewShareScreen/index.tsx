@@ -101,7 +101,8 @@ const matchCredentialsWithDcqlQuery = (credentials: UniqueDigitalCredential[], d
 
 const SelectOverviewShareScreen: FC<Props> = (props: Props): ReactElement => {
   // memoize filtered and other values
-  const {credentials, verifier, dcqlQuery, veranaTrust, veranaAccreditation, isSendDisabled, onSelectAndSend, onDecline} = props.route.params;
+  const {credentials, verifier, dcqlQuery, veranaTrust, veranaAccreditation, veranaRequestedCredentialName, isSendDisabled, onSelectAndSend, onDecline} =
+    props.route.params;
   const showRevoked = useUserPreference('showRevokedCredentials') ?? false;
   const showExpired = useUserPreference('showExpiredCredentials') ?? false;
   // Hide revoked/expired credentials from the picker unless the user enabled them in settings.
@@ -154,15 +155,17 @@ const SelectOverviewShareScreen: FC<Props> = (props: Props): ReactElement => {
   const requestedVct = dcqlQuery.credentials
     ?.map(credentialQuery => (credentialQuery.meta && 'vct_values' in credentialQuery.meta ? credentialQuery.meta.vct_values?.[0] : undefined))
     .find((vct): vct is string => typeof vct === 'string');
-  const requestedCredentialName = (() => {
-    if (!requestedVct) return undefined;
-    try {
-      const segments = new URL(requestedVct).pathname.split('/').filter(Boolean);
-      return segments[segments.length - 1] ?? requestedVct;
-    } catch {
-      return requestedVct;
-    }
-  })();
+  const requestedCredentialName =
+    veranaRequestedCredentialName ??
+    (() => {
+      if (!requestedVct) return undefined;
+      try {
+        const segments = new URL(requestedVct).pathname.split('/').filter(Boolean);
+        return segments[segments.length - 1] ?? requestedVct;
+      } catch {
+        return requestedVct;
+      }
+    })();
 
   // Share is blocked on an UNTRUSTED resolution, on a definitive Q3 refusal, and while the
   // check is still in flight. A could-not-determine verdict (granted undefined) never blocks here.
