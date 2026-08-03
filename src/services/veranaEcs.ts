@@ -59,9 +59,11 @@ const asset = (
   return digest ? { uri, digest } : { uri }
 }
 
+// [PW-POT-4]: claims render as facts only from credentials the resolver verified. A revoked or
+// tampered ECS credential still carries claims; they belong in the failure detail, not blocks 2-3.
 export const readEcsService = (credential: VeranaTrustCredential | undefined): EcsService | undefined => {
   const claims = credential?.claims
-  if (!claims) return undefined
+  if (!claims || !isValid(credential)) return undefined
 
   const format = str(claims, 'descriptionFormat')
   return {
@@ -85,7 +87,7 @@ export const readEcsService = (credential: VeranaTrustCredential | undefined): E
 
 export const readEcsOrganization = (credential: VeranaTrustCredential | undefined): EcsOrganization | undefined => {
   const claims = credential?.claims
-  if (!claims) return undefined
+  if (!claims || !isValid(credential)) return undefined
 
   return {
     id: str(claims, 'id'),
@@ -125,12 +127,21 @@ export const deriveVerdict = (credentials: VeranaTrustCredential[] | undefined):
   return 'UNTRUSTED'
 }
 
+// Wording is fixed by the versioned card at playground/public/trust-card/index.html. Same sentence
+// in every wallet, or the same evaluation reads differently depending on who rendered it.
 export const describeVerdict = (verdict: EcsVerdict, credentials: VeranaTrustCredential[] | undefined): string => {
-  if (verdict === 'TRUSTED') return 'Both identity checks verified against the Verana public registry'
-  if (verdict === 'UNTRUSTED') return 'Neither identity check verified'
+  if (verdict === 'TRUSTED') return 'Both identity credentials verified against the Verana public registry'
+  if (verdict === 'UNTRUSTED') {
+    // A service can present structurally valid ECS credentials and still be untrusted, because
+    // whoever issued them is not trusted. Saying "neither credential verified" beside two green
+    // ticks would be a visible contradiction, so name the reason the resolver actually gave.
+    return isValid(findServiceCredential(credentials)) || isValid(findOrganizationCredential(credentials))
+      ? 'The Verana public registry does not vouch for this service.'
+      : 'Neither identity credential verified. This counterparty cannot present verifiable trust credentials.'
+  }
   return isValid(findServiceCredential(credentials))
-    ? 'Service verified, operator unverified'
-    : 'Operator verified, service unverified'
+    ? 'The service credential verified. Nothing verifies who operates it.'
+    : 'The operator credential verified. Nothing verifies the service itself.'
 }
 
 const MARKDOWN_LINK = /\[([^\]]*)\]\(([^)]*)\)/g

@@ -15,9 +15,13 @@ export type VeranaTrustCredential = {
   claims?: Record<string, unknown>;
 };
 
+// UNVERIFIED is wallet-local: the peer identifies by DID but the resolver could not be
+// reached or answered malformed. Could-not-determine, never a refusal.
+export type VeranaTrustStatus = 'TRUSTED' | 'PARTIAL' | 'UNTRUSTED' | 'UNVERIFIED';
+
 export type VeranaTrustResolution = {
   did: string;
-  trustStatus: 'TRUSTED' | 'PARTIAL' | 'UNTRUSTED';
+  trustStatus: VeranaTrustStatus;
   production: boolean;
   evaluatedAt?: string;
   evaluatedAtBlock?: number;
@@ -30,7 +34,7 @@ export type VeranaTrustDetails = VeranaTrustResolution & {
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
-const isTrustStatus = (value: unknown): value is VeranaTrustResolution['trustStatus'] =>
+const isTrustStatus = (value: unknown): value is VeranaTrustStatus =>
   value === 'TRUSTED' || value === 'PARTIAL' || value === 'UNTRUSTED';
 
 const parseResolution = (value: unknown, requestedDid: string): VeranaTrustResolution | undefined => {
@@ -91,23 +95,21 @@ const fetchResolution = async (did: string, detail: 'summary' | 'full', timeoutM
   }
 };
 
-// Fast trust decision on detail=summary (a cached lookup on the resolver). Fail-closed: any
-// non-200, network failure, timeout or non-TRUSTED status resolves to undefined so the wallet
-// falls back to its other trust mechanisms instead of displaying unverified trust. The heavier
-// detail=full evaluation is only fetched lazily by the detail screen, off the critical path.
-export const resolveVeranaTrust = async (did: string): Promise<VeranaTrustResolution | undefined> => {
+// Fast trust decision on detail=summary (a cached lookup on the resolver). Every outcome is
+// reported: TRUSTED/PARTIAL/UNTRUSTED as the resolver said, UNVERIFIED synthesized on any
+// non-200, network failure, timeout or malformed body. Rendering and gating live with the
+// consumers; this service reports, it does not filter. The heavier detail=full evaluation is
+// only fetched lazily by the detail screen, off the critical path.
+export const resolveVeranaTrust = async (did: string): Promise<VeranaTrustResolution> => {
   const resolution = parseResolution(await fetchResolution(did, 'summary', DECISION_TIMEOUT_MS), did);
-  if (resolution?.trustStatus !== 'TRUSTED') {
-    return undefined;
-  }
-  return resolution;
+  return resolution ?? {did, trustStatus: 'UNVERIFIED', production: true};
 };
 
-export const fetchVeranaTrustDetails = async (did: string): Promise<VeranaTrustDetails | undefined> => {
+export const fetchVeranaTrustDetails = async (did: string): Promise<VeranaTrustDetails> => {
   const value = await fetchResolution(did, 'full', DETAILS_TIMEOUT_MS);
   const resolution = parseResolution(value, did);
-  if (resolution?.trustStatus !== 'TRUSTED' || !isRecord(value)) {
-    return undefined;
+  if (resolution === undefined || !isRecord(value)) {
+    return {did, trustStatus: 'UNVERIFIED', production: true, credentials: []};
   }
 
   const credentials = Array.isArray(value.credentials)

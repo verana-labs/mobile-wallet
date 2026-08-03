@@ -29,5 +29,6 @@ export const IS_IMAGE_URL_REGEX = /\.(jpg|jpeg|png|gif|bmp|webp)$/i;
 export const EMERGENCY_ALERT_DELAY = 15;
 
 export const VERANA_RESOLVER_URL = 'https://resolver.testnet.verana.network';
+export const VERANA_API_URL = 'https://api.testnet.verana.network';
 export const VERANA_REGISTRY_NAME = 'Verana Trust Registry';
 export const VERANA_REGISTRY_URI = 'https://verana.io';
