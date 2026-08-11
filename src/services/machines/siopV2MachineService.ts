@@ -41,6 +41,8 @@ import {recordTrustAnchorLinksForVerification} from '../../store/actions/trustAn
 import {SiopV2AuthorizationRequestData, SiopV2MachineContext} from '../../types/machines/siopV2';
 import {getCredentialIssuerContact, getCredentialSubjectContact, translateCorrelationIdToName} from '../../utils';
 import {getContacts} from '../contactService';
+import {checkVeranaAccreditation, resolveVctSchema} from '../veranaPermissions';
+import {extractDidFromClientId, fetchVeranaTrustDetails} from '../veranaTrustService';
 
 const CLOCK_SKEW = 120;
 const logger = Loggers.DEFAULT.get('sphereon:siopV2MachineService');
@@ -129,6 +131,20 @@ export const getSiopRequest = async (context: Pick<SiopV2MachineContext, 'didAut
   const clientId: string | undefined = verifiedAuthorizationRequest.authorizationRequest.getMergedProperty<string>('client_id');
   const entityId: string | undefined = verifiedAuthorizationRequest.authorizationRequest.getMergedProperty<string>('entity_id');
   const x5c: Array<string> | undefined = await extractRequestObjectX5c(verifiedAuthorizationRequest);
+  const veranaDid = extractDidFromClientId(clientId);
+  // Full detail (ECS credentials included): the consent card renders SERVICE / OPERATED BY blocks.
+  const veranaTrust = veranaDid ? await fetchVeranaTrustDetails(veranaDid) : undefined;
+  const requestedVct = verifiedAuthorizationRequest.dcqlQuery?.credentials
+    ?.map(credentialQuery =>
+      credentialQuery.meta && 'vct_values' in credentialQuery.meta ? credentialQuery.meta.vct_values?.[0] : undefined,
+    )
+    .find((vct): vct is string => typeof vct === 'string');
+  const vctSchema = requestedVct ? await resolveVctSchema(requestedVct) : undefined;
+  // Q3 renders on a TRUSTED state; UNTRUSTED already blocks, UNVERIFIED stays could-not-determine.
+  const veranaAccreditation =
+    veranaDid && veranaTrust?.trustStatus === 'TRUSTED' && requestedVct
+      ? await checkVeranaAccreditation({did: veranaDid, role: 'verifier', schemaId: vctSchema?.schemaId, vct: requestedVct})
+      : undefined;
 
   return {
     issuer: verifiedAuthorizationRequest.issuer,
@@ -140,6 +156,9 @@ export const getSiopRequest = async (context: Pick<SiopV2MachineContext, 'didAut
     clientId,
     entityId,
     x5c,
+    veranaTrust,
+    veranaAccreditation,
+    veranaRequestedCredentialName: vctSchema?.credentialName,
     dcqlQuery: verifiedAuthorizationRequest.dcqlQuery,
     // presentationDefinitions:
     //   (await verifiedAuthorizationRequest.authorizationRequest.containsResponseType('vp_token')) ||

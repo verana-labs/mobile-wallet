@@ -8,6 +8,7 @@ import {CONTACT_ALIAS_MAX_LENGTH} from '../../@config/constants';
 import {agentContext} from '../../agent';
 import {ContactInformationView} from '../../components/views/ContactInformationView';
 import FederationTrustView from '../../components/views/FederationTrustView';
+import VeranaTrustView from '../../components/views/VeranaTrustView';
 import Localization, {translate} from '../../localization/Localization';
 import {getContacts} from '../../services/contactService';
 import {createContact, fetchBrandingForContact, updateContact} from '../../store/actions/contact.actions';
@@ -33,6 +34,7 @@ const NewContactAddScreen: FC<Props> = (props: Props): ReactElement => {
     contacts,
     identities,
     federations,
+    veranaTrust,
     onCreate,
     onContinue,
     onDecline,
@@ -148,7 +150,7 @@ const NewContactAddScreen: FC<Props> = (props: Props): ReactElement => {
       }
     };
 
-    if (federations !== undefined && federations.length === 0 && warnOnLowTrust) {
+    if (federations !== undefined && federations.length === 0 && warnOnLowTrust && veranaTrust?.trustStatus !== 'TRUSTED') {
       props.navigation.navigate(MainRoutesEnum.POPUP_MODAL, {
         title: translate('new_contact_add_new_contact_low_level_trust_title'),
         details: translate('new_contact_add_new_contact_low_level_trust_description'),
@@ -280,7 +282,10 @@ const NewContactAddScreen: FC<Props> = (props: Props): ReactElement => {
 
   return (
     <Container>
-      {brandedFederations && (
+      {veranaTrust && (
+        <VeranaTrustView partyName={name} resolution={veranaTrust} style={{marginTop: 12, marginBottom: 24, marginRight: 24, marginLeft: 24}} />
+      )}
+      {brandedFederations && (brandedFederations.length > 0 || veranaTrust?.trustStatus !== 'TRUSTED') && (
         <FederationTrustView
           partyName={name}
           federations={brandedFederations}

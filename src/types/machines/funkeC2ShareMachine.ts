@@ -17,6 +17,7 @@ import {ErrorDetails} from '../error';
 import {MappedCredential} from './getPIDCredentialMachine';
 import {RPRegistrationMetadataPayload} from '@sphereon/did-auth-siop';
 import {DcqlQuery} from 'dcql';
+import {VeranaTrustResolution} from '../../services/veranaTrustService';
 
 export enum FunkeC2ShareMachineStateTypes {
   createConfig = 'createConfig',
@@ -180,4 +181,5 @@ export type SiopV2AuthorizationRequestData = {
   uri?: URL;
   clientId?: string;
   dcqlQuery: DcqlQuery;
+  veranaTrust?: VeranaTrustResolution;
 };

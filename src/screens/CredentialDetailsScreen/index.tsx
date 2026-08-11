@@ -22,6 +22,7 @@ import {WalletCredentialStatus, WalletCredentialSummary} from '../../types/crede
 import {useAppSelector} from '../../hooks/useStore';
 import CredentialStatusBadge from '../../components/views/CredentialStatusBadge';
 import CredentialValuesToggle from '../../components/views/CredentialValuesToggle';
+import {VeranaTrustChain} from '../../components/views/VeranaTrustChain';
 import {filterOutStatusListRows, initialWalletStatus} from '../../utils/credentialStatus';
 import {translate} from '../../localization/Localization';
 import {
@@ -53,7 +54,7 @@ const getCredentialCardLogo = (credential: CredentialSummary): ImageAttributes |
 
 const CredentialDetailsScreen: FC<Props> = (props: Props): JSX.Element => {
   const {navigation, route} = props;
-  const {credential, onBack, primaryAction, secondaryAction, hideLinks} = route.params;
+  const {credential, onBack, primaryAction, secondaryAction, hideLinks, veranaTrust, veranaAccreditation} = route.params;
   const issuer: string = credential.issuer.alias;
   const {announce} = useAccessibility();
   const insets = useSafeAreaInsets();
@@ -223,6 +224,17 @@ const CredentialDetailsScreen: FC<Props> = (props: Props): JSX.Element => {
             contentContainerStyle={{flexGrow: 1}}
             ListHeaderComponent={
               <View style={{backgroundColor: backgroundColors.primaryDark}}>
+                {veranaTrust && (
+                  <View style={{paddingHorizontal: 24, paddingTop: 4, paddingBottom: 12}}>
+                    <VeranaTrustChain
+                      resolution={veranaTrust}
+                      credentials={veranaTrust.credentials}
+                      isLoading={false}
+                      accreditation={veranaAccreditation}
+                      ask={{kind: 'offer', credential: credential.branding?.alias ?? credential.title, party: credential.issuer.alias}}
+                    />
+                  </View>
+                )}
                 <CardContainer>
                   <View
                     accessible

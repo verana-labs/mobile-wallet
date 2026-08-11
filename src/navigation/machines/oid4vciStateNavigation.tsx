@@ -56,6 +56,9 @@ import {storeActivityLogging} from '../../store/actions/logging.actions';
 import {recordTrustAnchorLinksForVerification} from '../../store/actions/trustAnchor.actions';
 import {extractIssuerX5cFromCredential} from '../../services/trustAnchor/trustAnchorMatcher';
 import {extractIssuerX5cFromMdoc} from '../../services/trustAnchor/mdocX5c';
+import {checkVeranaAccreditation} from '../../services/veranaPermissions';
+import {resolveSignedIssuerMetadata} from '../../services/veranaSignedIssuerMetadata';
+import {fetchVeranaTrustDetails, resolveVeranaTrust} from '../../services/veranaTrustService';
 import {computeEntryHash} from '@veramo/utils';
 import {VerifiableCredential} from '@veramo/core';
 import {UniqueDigitalCredential} from '@sphereon/ssi-sdk.credential-store';
@@ -153,6 +156,8 @@ const navigateAddContact = async (args: OID4VCIMachineNavigationArgs): Promise<v
   };
 
   const federationParties = await lookupFederationParties(contact, trustedAnchors);
+  const issuerDid = serverMetadata.issuer ? (await resolveSignedIssuerMetadata(serverMetadata.issuer))?.did : undefined;
+  const veranaTrust = issuerDid ? await resolveVeranaTrust(issuerDid) : undefined;
 
   const branding = issuerBranding?.[0] ?? {};
   navigation.navigate(MainRoutesEnum.OID4VCI, {
@@ -160,6 +165,7 @@ const navigateAddContact = async (args: OID4VCIMachineNavigationArgs): Promise<v
     params: {
       name: contact.contact.displayName,
       federations: federationParties,
+      veranaTrust,
       uri: contact.uri,
       identities: contact.identities,
       contacts: branding.contacts,
@@ -180,7 +186,7 @@ const navigateAddContact = async (args: OID4VCIMachineNavigationArgs): Promise<v
 
 const navigateReviewContact = async (args: OID4VCIMachineNavigationArgs): Promise<void> => {
   const {navigation, state, oid4vciMachine, onBack, onNext} = args;
-  const {contact, issuerBranding, trustedAnchors} = state.context;
+  const {contact, issuerBranding, trustedAnchors, serverMetadata} = state.context;
 
   if (!contact) {
     return Promise.reject(Error('Missing contact in context'));
@@ -191,6 +197,8 @@ const navigateReviewContact = async (args: OID4VCIMachineNavigationArgs): Promis
   };
 
   const federationParties = await lookupFederationParties(contact, trustedAnchors);
+  const issuerDid = serverMetadata?.issuer ? (await resolveSignedIssuerMetadata(serverMetadata.issuer))?.did : undefined;
+  const veranaTrust = issuerDid ? await resolveVeranaTrust(issuerDid) : undefined;
 
   const branding = issuerBranding?.[0] ?? {};
   navigation.navigate(MainRoutesEnum.OID4VCI, {
@@ -198,6 +206,7 @@ const navigateReviewContact = async (args: OID4VCIMachineNavigationArgs): Promis
     params: {
       name: contact.contact.displayName,
       federations: federationParties,
+      veranaTrust,
       uri: contact.uri,
       logo: branding.logo,
       description: branding.description,
@@ -331,7 +340,7 @@ const navigateAuthorizationCodeURL = async (args: OID4VCIMachineNavigationArgs):
 
 const navigateReviewCredentials = async (args: OID4VCIMachineNavigationArgs): Promise<void> => {
   const {oid4vciMachine, navigation, state, onBack, onNext} = args;
-  const {credentialsToAccept, contact, credentialBranding} = state.context;
+  const {credentialsToAccept, contact, credentialBranding, serverMetadata} = state.context;
   // The selectedCredential from context is the configurationId, whilst we store the branding by type. We need to map
   const configId = state.context.selectedCredentials[0];
   const types =
@@ -416,6 +425,18 @@ const navigateReviewCredentials = async (args: OID4VCIMachineNavigationArgs): Pr
     );
   };
 
+  // OID4VCI carries no client_id; the issuer's DID is only discoverable through its DID-signed
+  // metadata (Accept: application/jwt). No signed metadata → no DID → no Verana card, by design.
+  const issuerDid = serverMetadata?.issuer ? (await resolveSignedIssuerMetadata(serverMetadata.issuer))?.did : undefined;
+  const veranaTrust = issuerDid ? await fetchVeranaTrustDetails(issuerDid) : undefined;
+  const offeredConfiguration = serverMetadata?.credentialIssuerMetadata?.credential_configurations_supported?.[configId];
+  const offeredVct =
+    offeredConfiguration && 'vct' in offeredConfiguration && typeof offeredConfiguration.vct === 'string' ? offeredConfiguration.vct : types[0];
+  const veranaAccreditation =
+    issuerDid && veranaTrust?.trustStatus === 'TRUSTED' && offeredVct
+      ? await checkVeranaAccreditation({did: issuerDid, role: 'issuer', vct: offeredVct})
+      : undefined;
+
   const signingMode = credentialsToAccept.find(cred => !!cred.credential_subject_issuance);
 
   let credentialSummary;
@@ -453,9 +474,13 @@ const navigateReviewCredentials = async (args: OID4VCIMachineNavigationArgs): Pr
       rawCredential: credentialsToAccept[0].rawVerifiableCredential,
       hideLinks: true,
       credential: credentialSummary,
+      veranaTrust,
+      veranaAccreditation,
       primaryAction: {
         caption: translate(signingMode ? 'action_sign_label' : 'action_accept_label'),
         onPress: onNext,
+        // Accept is blocked on UNTRUSTED and on a definitive Q2 refusal; could-not-determine never blocks.
+        disabled: veranaTrust?.trustStatus === 'UNTRUSTED' || veranaAccreditation?.granted === false,
       },
       secondaryAction: {
         caption: translate('action_decline_label'),
