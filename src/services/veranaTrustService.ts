@@ -75,6 +75,54 @@ export const extractDidFromClientId = (clientId?: string): string | undefined =>
   return did.startsWith('did:') ? did.split('#')[0] : undefined;
 };
 
+// did:web:host:a:b -> https://host/a/b/did.json, host-only -> /.well-known/did.json
+const didWebDocumentUrl = (did: string): string | undefined => {
+  if (!did.startsWith('did:web:')) {
+    return undefined;
+  }
+  const [host, ...path] = did.slice('did:web:'.length).split(':').map(decodeURIComponent);
+  if (!host) {
+    return undefined;
+  }
+  return path.length ? `https://${host}/${path.join('/')}/did.json` : `https://${host}/.well-known/did.json`;
+};
+
+/**
+ * The DID the Verana registry knows this counterparty by.
+ *
+ * A did:webvh agent also publishes a parallel did:web document, and request-object verification
+ * hands us that did:web name. Only the did:webvh form carries a trust evaluation, so the parallel
+ * document's `alsoKnownAs` is followed back before anything is asked of the registry. Any other
+ * DID, and any failure, is used as given.
+ */
+export const canonicalVeranaDid = async (did?: string): Promise<string | undefined> => {
+  const url = did ? didWebDocumentUrl(did) : undefined;
+  if (!did || !url) {
+    return did;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DECISION_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {signal: controller.signal});
+    if (!response.ok) {
+      debug(`${url} returned ${response.status}`);
+      return did;
+    }
+    const document: unknown = await response.json();
+    const alsoKnownAs = isRecord(document) ? document.alsoKnownAs : undefined;
+    if (!Array.isArray(alsoKnownAs)) {
+      return did;
+    }
+    return alsoKnownAs.find((entry): entry is string => typeof entry === 'string' && entry.startsWith('did:webvh:')) ?? did;
+  } catch (error) {
+    debug(`could not read ${url}: ${error}`);
+    return did;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 const fetchResolution = async (did: string, detail: 'summary' | 'full', timeoutMs: number): Promise<unknown> => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
